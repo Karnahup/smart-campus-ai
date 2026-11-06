@@ -1,17 +1,22 @@
 
+import os
+
 from flask import Flask, render_template, request
 import mysql.connector
+
 import model
 import sentiment
 
+
 app = Flask(__name__)
+
 
 # DATABASE CONNECTION
 db = mysql.connector.connect(
-    host="localhost",
-    user="",
-    password="",
-    database="smartcampus"
+    host=os.getenv("MYSQL_HOST", "localhost"),
+    user=os.getenv("MYSQL_USER", "root"),
+    password=os.getenv("MYSQL_PASSWORD", ""),
+    database=os.getenv("MYSQL_DATABASE", "smartcampus")
 )
 
 cursor = db.cursor(buffered=True)
@@ -22,29 +27,39 @@ cursor = db.cursor(buffered=True)
 def home():
     return render_template("index.html")
 
+
 # FACULTY PROFILE
 @app.route('/faculty_profile/<username>')
 def faculty_profile(username):
 
     cursor.execute(
-        "SELECT name, department, email, phone, subject FROM faculty WHERE username=%s",
+        """
+        SELECT name, department, email, phone, subject
+        FROM faculty
+        WHERE username=%s
+        """,
         (username,)
     )
 
     data = cursor.fetchone()
 
     if not data:
-        return "Faculty not found"
+        return "Faculty not found", 404
 
     faculty_data = {
-    "username": username,   # ADD THIS
-    "name": data[0],
-    "department": data[1],
-    "email": data[2],
-    "phone": data[3],
-    "subject": data[4]
-}
-    return render_template("faculty_profile.html", faculty=faculty_data)
+        "username": username,
+        "name": data[0],
+        "department": data[1],
+        "email": data[2],
+        "phone": data[3],
+        "subject": data[4]
+    }
+
+    return render_template(
+        "faculty_profile.html",
+        faculty=faculty_data
+    )
+
 
 # STUDENT PROFILE
 @app.route('/student_profile/<username>')
@@ -62,7 +77,7 @@ def student_profile(username):
     data = cursor.fetchone()
 
     if not data:
-        return "Student not found"
+        return "Student not found", 404
 
     student_data = {
         "username": username,
@@ -78,6 +93,7 @@ def student_profile(username):
         student=student_data
     )
 
+
 # LOGIN
 @app.route('/login', methods=['POST'])
 def login():
@@ -86,7 +102,11 @@ def login():
     password = request.form['password']
 
     cursor.execute(
-        "SELECT role FROM users WHERE username=%s AND password=%s",
+        """
+        SELECT role
+        FROM users
+        WHERE username=%s AND password=%s
+        """,
         (username, password)
     )
 
@@ -101,11 +121,18 @@ def login():
     if role == "student":
 
         cursor.execute(
-            "SELECT name, attendance, dbms, python, ai FROM students WHERE username=%s",
+            """
+            SELECT name, attendance, dbms, python, ai
+            FROM students
+            WHERE username=%s
+            """,
             (username,)
         )
 
         data = cursor.fetchone()
+
+        if not data:
+            return "Student details not found", 404
 
         name = data[0]
         attendance = int(data[1] or 0)
@@ -113,25 +140,28 @@ def login():
         python_marks = int(data[3] or 0)
         ai = int(data[4] or 0)
 
-        percentage = round((dbms + python_marks + ai) / 3, 2)
+        percentage = round(
+            (dbms + python_marks + ai) / 3, 2
+        )
 
         risk = model.predict_failure(attendance, percentage)
         placement = model.placement_score(percentage, attendance)
         suggestion = model.study_suggestion(percentage, attendance)
 
         return render_template(
-    "student_dashboard.html",
-    name=name,
-    username=username,
-    attendance=attendance,
-    dbms=dbms,
-    python=python_marks,
-    ai=ai,
-    percentage=percentage,
-    risk=risk,
-    placement=placement,
-    suggestion=suggestion
-)
+            "student_dashboard.html",
+            name=name,
+            username=username,
+            attendance=attendance,
+            dbms=dbms,
+            python=python_marks,
+            ai=ai,
+            percentage=percentage,
+            risk=risk,
+            placement=placement,
+            suggestion=suggestion
+        )
+
     # FACULTY
     elif role == "faculty":
 
@@ -141,7 +171,7 @@ def login():
         return render_template(
             "faculty_dashboard.html",
             students=students,
-            username=username,
+            username=username
         )
 
     # ADMIN
@@ -157,6 +187,7 @@ def login():
             feedbacks=[]
         )
 
+
 # ADMIN VIEW STUDENT
 @app.route('/admin_student', methods=['POST'])
 def admin_student():
@@ -164,11 +195,18 @@ def admin_student():
     student_id = request.form['student_id']
 
     cursor.execute(
-        "SELECT name, attendance, dbms, python, ai FROM students WHERE id=%s",
+        """
+        SELECT name, attendance, dbms, python, ai
+        FROM students
+        WHERE id=%s
+        """,
         (student_id,)
     )
 
     data = cursor.fetchone()
+
+    if not data:
+        return "Student not found", 404
 
     name = data[0]
     attendance = int(data[1] or 0)
@@ -176,7 +214,9 @@ def admin_student():
     python_marks = int(data[3] or 0)
     ai = int(data[4] or 0)
 
-    percentage = round((dbms + python_marks + ai) / 3, 2)
+    percentage = round(
+        (dbms + python_marks + ai) / 3, 2
+    )
 
     student_data = {
         "name": name,
@@ -187,9 +227,13 @@ def admin_student():
         "percentage": percentage
     }
 
-    # Fetch only that student's feedback
+    # FETCH STUDENT FEEDBACK
     cursor.execute(
-        "SELECT feedback_text, sentiment FROM feedback WHERE student_id=%s",
+        """
+        SELECT feedback_text, sentiment
+        FROM feedback
+        WHERE student_id=%s
+        """,
         (student_id,)
     )
 
@@ -211,21 +255,31 @@ def admin_student():
 def update_student():
 
     student_id = request.form['student_id']
-    dbms = request.form['dbms']
-    python_marks = request.form['python']
-    ai = request.form['ai']
-    attendance = request.form['attendance']
 
-    dbms = int(dbms or 0)
-    python_marks = int(python_marks or 0)
-    ai = int(ai or 0)
-    attendance = int(attendance or 0)
+    dbms = int(request.form['dbms'] or 0)
+    python_marks = int(request.form['python'] or 0)
+    ai = int(request.form['ai'] or 0)
+    attendance = int(request.form['attendance'] or 0)
 
-    overall = round((dbms + python_marks + ai) / 3, 2)
+    overall = round(
+        (dbms + python_marks + ai) / 3, 2
+    )
 
     cursor.execute(
-        "UPDATE students SET dbms=%s, python=%s, ai=%s, marks=%s, attendance=%s WHERE id=%s",
-        (dbms, python_marks, ai, overall, attendance, student_id)
+        """
+        UPDATE students
+        SET dbms=%s, python=%s, ai=%s,
+            marks=%s, attendance=%s
+        WHERE id=%s
+        """,
+        (
+            dbms,
+            python_marks,
+            ai,
+            overall,
+            attendance,
+            student_id
+        )
     )
 
     db.commit()
@@ -237,7 +291,7 @@ def update_student():
 @app.route('/feedback', methods=['POST'])
 def feedback():
 
-    text = request.form['feedback']
+    feedback_text = request.form['feedback']
     username = request.form['username']
 
     cursor.execute(
@@ -246,18 +300,27 @@ def feedback():
     )
 
     student = cursor.fetchone()
+
+    if not student:
+        return "Student not found", 404
+
     student_id = student[0]
 
-    result = sentiment.analyze_feedback(text)
+    result = sentiment.analyze_feedback(feedback_text)
 
     cursor.execute(
-        "INSERT INTO feedback (feedback_text, sentiment, student_id) VALUES (%s,%s,%s)",
-        (text, result, student_id)
+        """
+        INSERT INTO feedback
+        (feedback_text, sentiment, student_id)
+        VALUES (%s, %s, %s)
+        """,
+        (feedback_text, result, student_id)
     )
 
     db.commit()
 
     return "Feedback Sentiment : " + result
+
 
 # UPDATE FACULTY PROFILE
 @app.route('/update_faculty', methods=['POST'])
@@ -271,7 +334,12 @@ def update_faculty():
     subject = request.form['subject']
 
     cursor.execute(
-        "UPDATE faculty SET name=%s, department=%s, email=%s, phone=%s, subject=%s WHERE username=%s",
+        """
+        UPDATE faculty
+        SET name=%s, department=%s, email=%s,
+            phone=%s, subject=%s
+        WHERE username=%s
+        """,
         (name, department, email, phone, subject, username)
     )
 
@@ -279,6 +347,8 @@ def update_faculty():
 
     return "Profile Updated Successfully"
 
+
+# UPDATE STUDENT PROFILE
 @app.route('/update_student_profile', methods=['POST'])
 def update_student_profile():
 
@@ -298,6 +368,7 @@ def update_student_profile():
 
     return "Profile Updated Successfully"
 
+
 # LOGOUT
 @app.route('/logout')
 def logout():
@@ -305,6 +376,8 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    debug_mode = os.getenv("FLASK_DEBUG", "0").lower() in (
+        "1", "true", "yes"
+    )
 
-
+    app.run(debug=debug_mode)
