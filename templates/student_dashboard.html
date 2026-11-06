@@ -1,1 +1,275 @@
 
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Student Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="/static/style.css">
+
+<style>
+body {
+    background: linear-gradient(to right, #1f4037, #99f2c8);
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: rgba(0,0,0,0.5);
+}
+
+.nav-right {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.logout-btn {
+    color: white;
+    text-decoration: none;
+    background: red;
+    padding: 8px 15px;
+    border-radius: 5px;
+}
+
+.dashboard {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: rgba(0,0,0,0.75);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 250px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    box-shadow: 0 0 25px rgba(0,0,0,0.4);
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 30px rgba(0,255,170,0.5);
+}
+
+.card span {
+    font-size: 28px;
+}
+
+.subject-table {
+    margin: auto;
+    width: 50%;
+    background: white;
+    color: black;
+    border-collapse: collapse;
+    font-size: 20px;
+    font-weight: bold;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+.subject-table th,
+.subject-table td {
+    padding: 15px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+.chart {
+    width: 60%;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+textarea {
+    width: 400px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 20px;
+    background: #1f4037;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: black;
+}
+
+@media(max-width:768px){
+    .dashboard{
+        flex-direction:column;
+        align-items:center;
+    }
+
+    .card{
+        width:80%;
+    }
+
+    .subject-table{
+        width:90%;
+    }
+
+    .chart{
+        width:95%;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="navbar">
+<h2>AI Smart Campus</h2>
+
+<div class="nav-right">
+Welcome {{name}}
+
+<a href="/student_profile/{{username}}">
+    <button>My Profile</button>
+</a>
+
+<a href="/logout" class="logout-btn">
+    Logout
+</a>
+</div>
+</div>
+
+<div class="dashboard">
+
+<div class="card">
+Attendance
+<br><br>
+{{attendance|default(0)}} %
+</div>
+
+<div class="card">
+Overall Percentage
+<br><br>
+{{percentage|default(0)}} %
+</div>
+
+<div class="card">
+Failure Risk
+<br><br>
+
+{% if risk == 'High Risk' %}
+<span style="color:red; font-weight:bold;">
+{% elif risk == 'Moderate Risk' %}
+<span style="color:orange; font-weight:bold;">
+{% else %}
+<span style="color:lightgreen; font-weight:bold;">
+{% endif %}
+
+{{ risk }}
+</span>
+</div>
+
+<div class="card">
+Placement Score
+<br><br>
+{{placement}}
+</div>
+
+</div>
+
+<h3 style="text-align:center;">Subject Marks</h3>
+
+<table border="1" style="margin:auto; text-align:center; width:40%; background:white; color:black;">
+<tr>
+<th>Subject</th>
+<th>Marks</th>
+</tr>
+
+<tr>
+<td>DBMS</td>
+<td>{{dbms|default(0)}}</td>
+</tr>
+
+<tr>
+<td>Python</td>
+<td>{{python|default(0)}}</td>
+</tr>
+
+<tr>
+<td>Artificial Intelligence</td>
+<td>{{ai|default(0)}}</td>
+</tr>
+</table>
+
+<h3 style="text-align:center;">Study Suggestion</h3>
+
+<p style="text-align:center;">{{suggestion}}</p>
+
+<div class="chart" style="width:60%; margin:auto;">
+<canvas id="myChart"></canvas>
+</div>
+
+<script>
+const dbms = Number("{{ dbms|default(0) }}");
+const pythonMarks = Number("{{ python|default(0) }}");
+const ai = Number("{{ ai|default(0) }}");
+
+const ctx = document.getElementById('myChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['DBMS', 'Python', 'AI'],
+        datasets: [{
+            label: 'Subject Performance',
+            data: [dbms, pythonMarks, ai],
+            backgroundColor: [
+                'rgba(54,162,235,0.6)',
+                'rgba(255,206,86,0.6)',
+                'rgba(75,192,192,0.6)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+</script>
+
+<h3 style="text-align:center;">Student Feedback</h3>
+
+<form action="/feedback" method="POST" style="text-align:center;">
+
+<input type="hidden" name="username" value="{{username}}">
+
+<textarea name="feedback" rows="4" cols="40"
+placeholder="Enter your feedback"></textarea>
+
+<br><br>
+
+<button type="submit">Submit Feedback</button>
+
+</form>
+
+</body>
+</html>
+
