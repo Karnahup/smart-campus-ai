@@ -1,1 +1,78 @@
+<!DOCTYPE html>
+<html>
 
+<head>
+<title>Faculty Dashboard</title>
+<h2>Faculty Dashboard</h2>
+
+<h3>Welcome {{username}}</h3>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="navbar">
+
+<h2>AI Smart Campus</h2>
+<a href="/faculty_profile/{{username}}">
+    <button>View My Profile</button>
+</a>
+
+<div class="nav-right">
+Faculty Panel
+<a href="/logout" class="logout-btn">Logout</a>
+</div>
+
+</div>
+
+<h2 style="text-align:center;">Update Student Performance</h2>
+
+<div style="width:420px; margin:auto;">
+
+<form action="/update_student" method="POST">
+
+<label>Select Student</label>
+
+<select name="student_id" required>
+
+{% for student in students %}
+
+<option value="{{student[0]}}">
+{{student[1]}}
+</option>
+
+{% endfor %}
+
+</select>
+
+<br><br>
+
+<label>DBMS Marks</label>
+<input type="number" name="dbms" min="0" max="100" required>
+
+<br><br>
+
+<label>Python Marks</label>
+<input type="number" name="python" min="0" max="100" required>
+
+<br><br>
+
+<label>AI Marks</label>
+<input type="number" name="ai" min="0" max="100" required>
+
+<br><br>
+
+<label>Attendance (%)</label>
+<input type="number" name="attendance" min="0" max="100" required>
+
+<br><br>
+
+<button type="submit">Update Student Data</button>
+
+</form>
+
+</div>
+
+</body>
+
+</html>
