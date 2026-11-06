@@ -1,1 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Faculty Profile</title>
 
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1f4037, #99f2c8);
+            color: white;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px;
+            font-size: 30px;
+            font-weight: bold;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .card {
+            width: 40%;
+            margin: auto;
+            padding: 30px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 25px rgba(0,0,0,0.4);
+            animation: slideUp 0.8s ease;
+        }
+
+        .item {
+            margin: 15px 0;
+            font-size: 18px;
+        }
+
+        .btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #1f4037;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            background: #14532d;
+        }
+
+        .edit-form {
+            display: none;
+            margin-top: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: none;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+
+        @keyframes slideUp {
+            from {transform: translateY(50px); opacity: 0;}
+            to {transform: translateY(0); opacity: 1;}
+        }
+    </style>
+
+    <script>
+        function toggleEdit() {
+            let form = document.getElementById("editForm");
+            form.style.display = form.style.display === "none" ? "block" : "none";
+        }
+    </script>
+
+</head>
+
+<body>
+
+<div class="header">Faculty Profile</div>
+
+<div class="card">
+
+    <div class="item"><b>Name:</b> {{ faculty.name }}</div>
+    <div class="item"><b>Department:</b> {{ faculty.department }}</div>
+    <div class="item"><b>Email:</b> {{ faculty.email }}</div>
+    <div class="item"><b>Phone:</b> {{ faculty.phone }}</div>
+    <div class="item"><b>Subject:</b> {{ faculty.subject }}</div>
+
+    <button class="btn" onclick="toggleEdit()">Edit Profile</button>
+
+    <!-- EDIT FORM -->
+    <form method="POST" action="/update_faculty" class="edit-form" id="editForm">
+
+        <input type="hidden" name="username" value="{{ faculty.username }}">
+
+        <input type="text" name="name" placeholder="Name" value="{{ faculty.name }}">
+        <input type="text" name="department" placeholder="Department" value="{{ faculty.department }}">
+        <input type="email" name="email" placeholder="Email" value="{{ faculty.email }}">
+        <input type="text" name="phone" placeholder="Phone" value="{{ faculty.phone }}">
+        <input type="text" name="subject" placeholder="Subject" value="{{ faculty.subject }}">
+
+        <button class="btn" type="submit">Save Changes</button>
+    </form>
+
+</div>
+
+</body>
+</html>
