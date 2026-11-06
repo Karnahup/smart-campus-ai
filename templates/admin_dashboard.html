@@ -1,1 +1,203 @@
+<!DOCTYPE html>
+<html>
 
+<head>
+
+<title>Admin Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="/static/style.css">
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+<h2>AI Smart Campus</h2>
+
+<div class="nav-right">
+Admin Panel
+<a href="/logout" class="logout-btn">Logout</a>
+</div>
+
+</div>
+
+
+<h1 style="text-align:center;">Admin Student Analytics</h1>
+
+
+<!-- STUDENT SELECT -->
+
+<div style="text-align:center; margin-top:30px;">
+
+<form action="/admin_student" method="POST">
+
+<select name="student_id" required>
+
+{% for student in students %}
+
+<option value="{{student[0]}}">
+
+{{student[1]}}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+<button type="submit">View Student</button>
+
+</form>
+
+</div>
+
+
+
+{% if student_data %}
+
+<hr>
+
+
+<h2 style="text-align:center; font-size:35px;">
+{{student_data.name}}
+</h2>
+
+
+<div class="dashboard">
+
+<div class="card">
+Attendance
+<br><br>
+{{student_data.attendance}} %
+</div>
+
+<div class="card">
+DBMS
+<br><br>
+{{student_data.dbms}}
+</div>
+
+<div class="card">
+Python
+<br><br>
+{{student_data.python}}
+</div>
+
+<div class="card">
+AI
+<br><br>
+{{student_data.ai}}
+</div>
+
+<div class="card">
+Overall %
+<br><br>
+{{student_data.percentage}}
+</div>
+
+</div>
+
+
+<h3 style="text-align:center;">Subject Performance</h3>
+
+<div style="width:40%; margin:auto">
+
+<canvas id="marksChart"></canvas>
+
+</div>
+
+
+<script>
+const dbms = Number("{{ student_data.dbms|default(0) }}");
+const pythonMarks = Number("{{ student_data.python|default(0) }}");
+const ai = Number("{{ student_data.ai|default(0) }}");
+
+const ctx = document.getElementById('marksChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['DBMS', 'Python', 'AI'],
+        datasets: [{
+            label: 'Marks',
+            data: [dbms, pythonMarks, ai]
+        }]
+    }
+});
+</script>
+
+
+
+<h3 style="text-align:center;">Attendance vs Performance</h3>
+
+<div style="width:40%; margin:auto">
+
+<canvas id="performanceChart"></canvas>
+
+</div>
+
+
+<script>
+const attendance = Number("{{ student_data.attendance|default(0) }}");
+const percentage = Number("{{ student_data.percentage|default(0) }}");
+
+const ctx2 = document.getElementById('performanceChart');
+
+new Chart(ctx2, {
+    type: 'line',
+    data: {
+        labels: ['Attendance', 'Percentage'],
+        datasets: [{
+            label: 'Performance',
+            data: [attendance, percentage],
+            borderColor: 'blue',
+            backgroundColor: 'rgba(54,162,235,0.2)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+</script>
+
+
+
+<h3 style="text-align:center;">Student Feedback</h3>
+
+<table border="1" style="margin:auto; width:50%; text-align:center">
+
+<tr>
+
+<th>Feedback</th>
+<th>Sentiment</th>
+
+</tr>
+
+{% for f in feedbacks %}
+
+<tr>
+
+<td>{{f[0]}}</td>
+<td>{{f[1]}}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+{% endif %}
+
+
+</body>
+</html>
